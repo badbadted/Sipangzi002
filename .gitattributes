@@ -1,0 +1,11 @@
+# Ensure package.json is treated as UTF-8 without BOM
+package.json text eol=lf
+
+# Ensure all JSON files are UTF-8
+*.json text eol=lf
+
+# Ensure TypeScript/JavaScript files are UTF-8
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
