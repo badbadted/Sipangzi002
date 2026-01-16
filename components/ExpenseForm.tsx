@@ -21,16 +21,19 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense
   const descriptionInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 從歷史支出中提取所有唯一的描述
+  // 從歷史支出中提取所有唯一的描述（根據當前選擇的類別過濾）
   const uniqueDescriptions = useMemo(() => {
     const descriptions = new Set<string>();
-    expenses.forEach(exp => {
-      if (exp.description && exp.description.trim()) {
-        descriptions.add(exp.description.trim());
-      }
-    });
+    // 只提取與當前類別相同的歷史描述
+    expenses
+      .filter(exp => exp.category === category)
+      .forEach(exp => {
+        if (exp.description && exp.description.trim()) {
+          descriptions.add(exp.description.trim());
+        }
+      });
     return Array.from(descriptions).sort();
-  }, [expenses]);
+  }, [expenses, category]);
 
   // 根據輸入過濾描述
   useEffect(() => {
@@ -79,6 +82,14 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense
     // Reset form partially
     setAmount('');
     setDescription('');
+    // 不重置 category，保持當前選擇
+  };
+
+  // 當類別改變時，清空描述以顯示新的類別相關描述
+  const handleCategoryChange = (newCategory: ExpenseCategory) => {
+    setCategory(newCategory);
+    setDescription(''); // 清空描述，讓用戶選擇新類別的歷史描述
+    setShowDescriptionDropdown(false);
   };
 
   return (
@@ -147,7 +158,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense
                   setShowDescriptionDropdown(true);
                 }
               }}
-              placeholder="您買了什麼？(可輸入或選擇歷史記錄)"
+              placeholder={`您買了什麼？(${CATEGORY_LABELS[category]}類別的歷史記錄)`}
               required
               list="description-list"
               className="w-full pl-12 pr-12 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all font-bold text-gray-800"
@@ -195,7 +206,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense
               <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
+                onChange={(e) => handleCategoryChange(e.target.value as ExpenseCategory)}
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
               >
                 {Object.values(ExpenseCategory).map((cat) => (
