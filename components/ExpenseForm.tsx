@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, Tag, DollarSign, FileText, UserCircle } from 'lucide-react';
-import { Expense, ExpenseCategory, User } from '../types';
-import { CATEGORY_LABELS } from '../constants';
+import { Plus, Calendar, Tag, DollarSign, FileText, UserCircle, CreditCard } from 'lucide-react';
+import { Expense, ExpenseCategory, PaymentMethod, User } from '../types';
+import { CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../constants';
 
 interface ExpenseFormProps {
   users: User[];
@@ -14,6 +14,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, onAddExpense }) => {
   const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.FOOD);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [userId, setUserId] = useState(users[0]?.id || '');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +25,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, onAddExpense }) => {
       description,
       category,
       date,
-      userId
+      userId,
+      paymentMethod
     });
 
     // Reset form partially
@@ -111,6 +113,25 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, onAddExpense }) => {
             </div>
           </div>
 
+          {/* Payment Method */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1">支付方式 💳</label>
+            <div className="relative group">
+              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
+              >
+                {Object.values(PaymentMethod).map((method) => (
+                  <option key={method} value={method}>{PAYMENT_METHOD_LABELS[method]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* User */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 ml-1">付款人 🦖</label>

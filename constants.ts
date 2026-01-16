@@ -1,4 +1,4 @@
-import { ExpenseCategory } from './types';
+import { ExpenseCategory, PaymentMethod } from './types';
 
 // Updated palette for "Cute" theme
 export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
@@ -38,3 +38,8 @@ export const USER_COLORS = [
 export const INITIAL_USERS = [
   { id: '1', name: '我', color: USER_COLORS[0] }
 ];
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  [PaymentMethod.CASH]: '現金 💵',
+  [PaymentMethod.CREDIT_CARD]: '信用卡 💳',
+};

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Trash2, ShoppingBag, Car, Home, Film, ShoppingCart, HeartPulse, Zap, HelpCircle } from 'lucide-react';
-import { Expense, ExpenseCategory, User } from '../types';
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '../constants';
+import { Trash2, ShoppingBag, Car, Home, Film, ShoppingCart, HeartPulse, Zap, HelpCircle, CreditCard } from 'lucide-react';
+import { Expense, ExpenseCategory, PaymentMethod, User } from '../types';
+import { CATEGORY_COLORS, CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../constants';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -73,7 +73,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpe
                 {/* Details */}
                 <div>
                   <h4 className="font-bold text-gray-800 text-lg">{expense.description}</h4>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 mt-1">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 mt-1 flex-wrap">
                     <span 
                         className="px-2 py-0.5 rounded-md text-white" 
                         style={{backgroundColor: color}}
@@ -86,6 +86,17 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpe
                     <span className="flex items-center gap-1 bg-gray-200 px-2 py-0.5 rounded-full">
                       <div className="w-2 h-2 rounded-full" style={{backgroundColor: user?.color}}></div>
                       {user?.name || '未知'}
+                    </span>
+                    <span>•</span>
+                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                      expense.paymentMethod === PaymentMethod.CASH 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-indigo-100 text-indigo-700'
+                    }`}>
+                      {expense.paymentMethod === PaymentMethod.CREDIT_CARD && (
+                        <CreditCard className="w-3 h-3" />
+                      )}
+                      {PAYMENT_METHOD_LABELS[expense.paymentMethod]}
                     </span>
                   </div>
                 </div>

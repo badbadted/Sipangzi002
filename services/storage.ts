@@ -14,7 +14,7 @@ import {
   DocumentData
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Expense, User } from '../types';
+import { Expense, User, PaymentMethod } from '../types';
 import { INITIAL_USERS } from '../constants';
 
 const COLLECTIONS = {
@@ -44,7 +44,12 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
       // We store the ID inside the document object for the app to use,
       // but Firestore also has the ID as doc.id.
       // We prioritize doc.id from Firestore as the source of truth.
-      expenses.push({ ...doc.data(), id: doc.id } as Expense);
+      const data = doc.data();
+      // 處理舊資料兼容性：如果沒有 paymentMethod，預設為現金
+      if (!data.paymentMethod) {
+        data.paymentMethod = PaymentMethod.CASH;
+      }
+      expenses.push({ ...data, id: doc.id } as Expense);
     });
     
     // Log sync status for debugging

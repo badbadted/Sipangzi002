@@ -15,6 +15,11 @@ export enum ExpenseCategory {
   OTHER = 'Other'
 }
 
+export enum PaymentMethod {
+  CASH = 'Cash',
+  CREDIT_CARD = 'CreditCard'
+}
+
 export interface Expense {
   id: string;
   amount: number;
@@ -22,6 +27,7 @@ export interface Expense {
   description: string;
   category: ExpenseCategory;
   userId: string;
+  paymentMethod: PaymentMethod; // 支付方式
   timestamp: number; // For sorting
 }
 
