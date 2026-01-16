@@ -25,8 +25,8 @@ const COLLECTIONS = {
 export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsubscribe => {
   const q = query(collection(db, COLLECTIONS.EXPENSES), orderBy("timestamp", "desc"));
   
-  // Remove includeMetadataChanges to ensure we only get real server updates
-  // This ensures all users see each other's changes in real-time
+  // Use onSnapshot to listen for real-time updates
+  // This will trigger whenever data changes on the server
   return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
     const expenses: Expense[] = [];
     snapshot.forEach((doc) => {
@@ -38,33 +38,63 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
     
     // Log sync status for debugging
     if (snapshot.metadata.fromCache) {
-      console.log("⚠️ Expenses loaded from cache. Waiting for server sync...");
+      console.warn("⚠️ Expenses loaded from cache. Waiting for server sync...");
+      console.warn("   如果有其他用戶的資料未顯示，請檢查網路連接");
     } else {
       console.log("✅ Expenses synced from server. Count:", expenses.length);
+      console.log("   資料已從 Firebase 伺服器同步");
+    }
+    
+    // Log pending writes
+    if (snapshot.metadata.hasPendingWrites) {
+      console.log("⏳ 有待同步的寫入操作...");
     }
     
     // Always call callback, but log if it's from cache
     callback(expenses);
   }, (error) => {
     console.error("❌ Error fetching expenses: ", error);
-    alert("無法連接到 Firebase，請檢查網路連線。");
+    console.error("錯誤詳情:", error.code, error.message);
+    
+    // Show more specific error messages
+    if (error.code === 'permission-denied') {
+      alert("❌ 權限錯誤：請檢查 Firebase Firestore 規則是否允許讀取資料。");
+    } else if (error.code === 'unavailable') {
+      alert("❌ 無法連接：Firebase 服務暫時不可用，請稍後再試。");
+    } else {
+      alert("❌ 無法連接到 Firebase，請檢查網路連線。\n錯誤：" + error.message);
+    }
   });
 };
 
 export const addExpenseToDb = async (expense: Omit<Expense, 'id'>) => {
   try {
+    console.log("📝 正在新增支出到 Firebase...", expense);
+    
     // We let Firestore generate the ID, or we can generate one if we want to setDoc
     // Here we use addDoc which auto-generates ID.
     const docRef = await addDoc(collection(db, COLLECTIONS.EXPENSES), expense);
     console.log("✅ Expense added with ID:", docRef.id);
     
-    // Wait for the write to be synced to server (for real-time multi-user sync)
-    // This ensures other users see the change immediately
-    await docRef.get();
+    // Verify the document was written
+    const docSnap = await docRef.get();
+    if (docSnap.exists()) {
+      console.log("✅ 支出已成功寫入 Firebase，其他用戶將看到此更新");
+    } else {
+      console.warn("⚠️ 警告：支出可能尚未完全同步到伺服器");
+    }
     
     return docRef.id;
-  } catch (e) {
+  } catch (e: any) {
     console.error("❌ Error adding expense: ", e);
+    console.error("錯誤代碼:", e.code);
+    console.error("錯誤訊息:", e.message);
+    
+    if (e.code === 'permission-denied') {
+      throw new Error("權限錯誤：請檢查 Firebase Firestore 規則是否允許寫入資料。");
+    } else if (e.code === 'unavailable') {
+      throw new Error("無法連接：Firebase 服務暫時不可用，請稍後再試。");
+    }
     throw e;
   }
 };
@@ -85,8 +115,8 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
   // For now, default order.
   const q = collection(db, COLLECTIONS.USERS);
   
-  // Remove includeMetadataChanges to ensure we only get real server updates
-  // This ensures all users see each other's changes in real-time
+  // Use onSnapshot to listen for real-time updates
+  // This will trigger whenever data changes on the server
   return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
     const users: User[] = [];
     snapshot.forEach((doc) => {
@@ -95,9 +125,16 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
     
     // Log sync status for debugging
     if (snapshot.metadata.fromCache) {
-      console.log("⚠️ Users loaded from cache. Waiting for server sync...");
+      console.warn("⚠️ Users loaded from cache. Waiting for server sync...");
+      console.warn("   如果有其他用戶的資料未顯示，請檢查網路連接");
     } else {
       console.log("✅ Users synced from server. Count:", users.length);
+      console.log("   資料已從 Firebase 伺服器同步");
+    }
+    
+    // Log pending writes
+    if (snapshot.metadata.hasPendingWrites) {
+      console.log("⏳ 有待同步的寫入操作...");
     }
     
     // If no users exist in DB (first run), we might want to return INITIAL_USERS
@@ -107,12 +144,23 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
     callback(users);
   }, (error) => {
     console.error("❌ Error fetching users: ", error);
-    alert("無法連接到 Firebase，請檢查網路連線。");
+    console.error("錯誤詳情:", error.code, error.message);
+    
+    // Show more specific error messages
+    if (error.code === 'permission-denied') {
+      alert("❌ 權限錯誤：請檢查 Firebase Firestore 規則是否允許讀取資料。");
+    } else if (error.code === 'unavailable') {
+      alert("❌ 無法連接：Firebase 服務暫時不可用，請稍後再試。");
+    } else {
+      alert("❌ 無法連接到 Firebase，請檢查網路連線。\n錯誤：" + error.message);
+    }
   });
 };
 
 export const addUserToDb = async (user: User) => {
   try {
+    console.log("📝 正在新增使用者到 Firebase...", user);
+    
     // Use setDoc to preserve the UUID generated by the frontend if we want, 
     // or use addDoc. The app currently generates UUIDs for users.
     // To keep it simple and consistent with Expense, we use setDoc with the passed ID.
@@ -120,11 +168,23 @@ export const addUserToDb = async (user: User) => {
     await setDoc(userRef, user);
     console.log("✅ User added with ID:", user.id);
     
-    // Wait for the write to be synced to server (for real-time multi-user sync)
-    // This ensures other users see the change immediately
-    await userRef.get();
-  } catch (e) {
+    // Verify the document was written
+    const docSnap = await userRef.get();
+    if (docSnap.exists()) {
+      console.log("✅ 使用者已成功寫入 Firebase，其他用戶將看到此更新");
+    } else {
+      console.warn("⚠️ 警告：使用者可能尚未完全同步到伺服器");
+    }
+  } catch (e: any) {
     console.error("❌ Error adding user: ", e);
+    console.error("錯誤代碼:", e.code);
+    console.error("錯誤訊息:", e.message);
+    
+    if (e.code === 'permission-denied') {
+      throw new Error("權限錯誤：請檢查 Firebase Firestore 規則是否允許寫入資料。");
+    } else if (e.code === 'unavailable') {
+      throw new Error("無法連接：Firebase 服務暫時不可用，請稍後再試。");
+    }
     throw e;
   }
 };

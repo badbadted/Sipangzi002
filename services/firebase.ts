@@ -31,9 +31,14 @@ const db = initializeFirestore(app, {
 enableNetwork(db)
   .then(() => {
     console.log("✅ Firestore network enabled. Ready for real-time sync.");
+    console.log("📡 Firebase Project ID:", firebaseConfig.projectId);
   })
   .catch((error) => {
     console.error("❌ Failed to enable Firestore network:", error);
+    console.error("請檢查：");
+    console.error("1. 網路連接是否正常");
+    console.error("2. Firebase 專案是否啟用");
+    console.error("3. Firestore 規則是否允許讀寫");
   });
 
 export { db };
