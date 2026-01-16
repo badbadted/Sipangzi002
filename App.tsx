@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, PieChart, Users, Menu, X, Tag } from 'lucide-react';
+import { LayoutDashboard, PieChart, Users, Menu, X, Tag, CreditCard } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Expense, User, ViewMode, Category } from './types';
@@ -23,7 +23,8 @@ import Dashboard from './components/Dashboard';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import UserManager from './components/UserManager';
-import CategoryManager from './components/CategoryManager'; 
+import CategoryManager from './components/CategoryManager';
+import CreditCardView from './components/CreditCardView'; 
 
 const App: React.FC = () => {
   // -- State --
@@ -145,6 +146,7 @@ const App: React.FC = () => {
   const navItems = [
     { id: 'dashboard', label: '總覽', icon: LayoutDashboard },
     { id: 'expenses', label: '記帳', icon: PieChart },
+    { id: 'creditcard', label: '信用卡', icon: CreditCard },
     { id: 'users', label: '成員', icon: Users },
     { id: 'categories', label: '類別', icon: Tag },
   ];
@@ -237,6 +239,7 @@ const App: React.FC = () => {
              <p className="text-gray-500 font-medium text-lg">
                 {currentView === 'dashboard' && '歡迎回來！看看今天的戰果 🍖'}
                 {currentView === 'expenses' && '紀錄每一筆開銷，別讓錢錢溜走 💸'}
+                {currentView === 'creditcard' && '查看信用卡消費明細 💳'}
                 {currentView === 'users' && '召集你的怪獸夥伴們 🦕'}
                 {currentView === 'categories' && '管理支出類別，讓記帳更清晰 🏷️'}
              </p>
@@ -303,6 +306,17 @@ const App: React.FC = () => {
                     onAddCategory={handleAddCategory} 
                     onUpdateCategory={handleUpdateCategory}
                     onDeleteCategory={handleDeleteCategory} 
+                 />
+             </div>
+          )}
+
+          {currentView === 'creditcard' && (
+             <div className="max-w-6xl mx-auto">
+                 <CreditCardView 
+                    expenses={expenses} 
+                    users={users} 
+                    categories={categories}
+                    onDeleteExpense={handleDeleteExpense} 
                  />
              </div>
           )}

@@ -41,7 +41,7 @@ export interface Expense {
   timestamp: number; // For sorting
 }
 
-export type ViewMode = 'dashboard' | 'expenses' | 'users' | 'categories';
+export type ViewMode = 'dashboard' | 'expenses' | 'users' | 'categories' | 'creditcard';
 
 export interface DailyStat {
   date: string;

@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend 
 } from 'recharts';
+import { ChevronDown, Users } from 'lucide-react';
 import { Expense, User, PaymentMethod, Category } from '../types';
 import { getCategoryColor, getCategoryLabel, PAYMENT_METHOD_LABELS } from '../constants';
 
@@ -13,17 +14,26 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) => {
+  const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  
+  // 根據選中的成員過濾支出
+  const filteredExpenses = useMemo(() => {
+    if (selectedUserId === 'all') {
+      return expenses;
+    }
+    return expenses.filter(e => e.userId === selectedUserId);
+  }, [expenses, selectedUserId]);
   
   // 現金統計（主要統計，信用卡不列入）
   const cashExpenses = useMemo(() => 
-    expenses.filter(e => e.paymentMethod === PaymentMethod.CASH), 
-    [expenses]
+    filteredExpenses.filter(e => e.paymentMethod === PaymentMethod.CASH), 
+    [filteredExpenses]
   );
   
   // 信用卡統計（獨立統計，不列入總支出）
   const creditCardExpenses = useMemo(() => 
-    expenses.filter(e => e.paymentMethod === PaymentMethod.CREDIT_CARD), 
-    [expenses]
+    filteredExpenses.filter(e => e.paymentMethod === PaymentMethod.CREDIT_CARD), 
+    [filteredExpenses]
   );
   
   // 總支出只統計現金（信用卡不列入）
@@ -136,6 +146,34 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) =>
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Member Filter */}
+      <div className="bg-white p-4 monster-card monster-shadow rounded-2xl">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            篩選成員：
+          </label>
+          <div className="relative">
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="appearance-none bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-2 pr-10 font-bold text-gray-800 focus:border-primary focus:ring-0 outline-none transition-all cursor-pointer"
+            >
+              <option value="all">全部合計</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id}>{user.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+          </div>
+          {selectedUserId !== 'all' && (
+            <span className="text-xs font-semibold text-primary bg-green-100 px-3 py-1 rounded-full">
+              顯示：{users.find(u => u.id === selectedUserId)?.name || '未知'}
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 monster-card monster-shadow relative overflow-hidden">
