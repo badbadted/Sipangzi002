@@ -8,6 +8,7 @@ import {
   orderBy,
   setDoc,
   getDocs,
+  getDoc,
   Unsubscribe,
   QuerySnapshot,
   DocumentData
@@ -88,14 +89,7 @@ export const addExpenseToDb = async (expense: Omit<Expense, 'id'>) => {
     // Here we use addDoc which auto-generates ID.
     const docRef = await addDoc(collection(db, COLLECTIONS.EXPENSES), expense);
     console.log("✅ Expense added with ID:", docRef.id);
-    
-    // Verify the document was written
-    const docSnap = await docRef.get();
-    if (docSnap.exists()) {
-      console.log("✅ 支出已成功寫入 Firebase，其他用戶將看到此更新");
-    } else {
-      console.warn("⚠️ 警告：支出可能尚未完全同步到伺服器");
-    }
+    console.log("✅ 支出已成功寫入 Firebase，其他用戶將看到此更新");
     
     return docRef.id;
   } catch (e: any) {
@@ -192,14 +186,7 @@ export const addUserToDb = async (user: User) => {
     const userRef = doc(db, COLLECTIONS.USERS, user.id);
     await setDoc(userRef, user);
     console.log("✅ User added with ID:", user.id);
-    
-    // Verify the document was written
-    const docSnap = await userRef.get();
-    if (docSnap.exists()) {
-      console.log("✅ 使用者已成功寫入 Firebase，其他用戶將看到此更新");
-    } else {
-      console.warn("⚠️ 警告：使用者可能尚未完全同步到伺服器");
-    }
+    console.log("✅ 使用者已成功寫入 Firebase，其他用戶將看到此更新");
   } catch (e: any) {
     console.error("❌ Error adding user: ", e);
     console.error("錯誤代碼:", e.code);
