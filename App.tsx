@@ -17,8 +17,7 @@ import { INITIAL_USERS } from './constants';
 import Dashboard from './components/Dashboard';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
-import UserManager from './components/UserManager';
-import AIAdvisor from './components/AIAdvisor'; 
+import UserManager from './components/UserManager'; 
 
 const App: React.FC = () => {
   // -- State --
@@ -197,8 +196,6 @@ const App: React.FC = () => {
           {/* Views */}
           {currentView === 'dashboard' && (
             <div className="space-y-8">
-              <AIAdvisor expenses={expenses} users={users} />
-              
               <Dashboard expenses={expenses} users={users} />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <ExpenseList 
