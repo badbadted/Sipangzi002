@@ -7,6 +7,7 @@ import {
   query, 
   orderBy,
   setDoc,
+  getDocs,
   Unsubscribe,
   QuerySnapshot,
   DocumentData
@@ -25,6 +26,15 @@ const COLLECTIONS = {
 export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsubscribe => {
   const q = query(collection(db, COLLECTIONS.EXPENSES), orderBy("timestamp", "desc"));
   
+  // First, try to get data from server to ensure we have latest data
+  getDocs(q).then((serverSnapshot) => {
+    if (!serverSnapshot.empty || serverSnapshot.metadata.fromCache === false) {
+      console.log("✅ 已從伺服器獲取最新支出資料");
+    }
+  }).catch((error) => {
+    console.warn("⚠️ 無法從伺服器獲取資料，將使用快取:", error);
+  });
+  
   // Use onSnapshot to listen for real-time updates
   // This will trigger whenever data changes on the server
   return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
@@ -39,7 +49,10 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
     // Log sync status for debugging
     if (snapshot.metadata.fromCache) {
       console.warn("⚠️ Expenses loaded from cache. Waiting for server sync...");
-      console.warn("   如果有其他用戶的資料未顯示，請檢查網路連接");
+      console.warn("   如果有其他用戶的資料未顯示，請檢查：");
+      console.warn("   1. 網路連接是否正常");
+      console.warn("   2. Firebase Firestore 規則是否允許讀取");
+      console.warn("   3. Firebase 專案是否正常運作");
     } else {
       console.log("✅ Expenses synced from server. Count:", expenses.length);
       console.log("   資料已從 Firebase 伺服器同步");
@@ -58,7 +71,7 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
     
     // Show more specific error messages
     if (error.code === 'permission-denied') {
-      alert("❌ 權限錯誤：請檢查 Firebase Firestore 規則是否允許讀取資料。");
+      alert("❌ 權限錯誤：請檢查 Firebase Firestore 規則是否允許讀取資料。\n\n請前往 Firebase Console → Firestore Database → Rules 設定規則。");
     } else if (error.code === 'unavailable') {
       alert("❌ 無法連接：Firebase 服務暫時不可用，請稍後再試。");
     } else {
@@ -115,6 +128,15 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
   // For now, default order.
   const q = collection(db, COLLECTIONS.USERS);
   
+  // First, try to get data from server to ensure we have latest data
+  getDocs(q).then((serverSnapshot) => {
+    if (!serverSnapshot.empty || serverSnapshot.metadata.fromCache === false) {
+      console.log("✅ 已從伺服器獲取最新使用者資料");
+    }
+  }).catch((error) => {
+    console.warn("⚠️ 無法從伺服器獲取資料，將使用快取:", error);
+  });
+  
   // Use onSnapshot to listen for real-time updates
   // This will trigger whenever data changes on the server
   return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
@@ -126,7 +148,10 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
     // Log sync status for debugging
     if (snapshot.metadata.fromCache) {
       console.warn("⚠️ Users loaded from cache. Waiting for server sync...");
-      console.warn("   如果有其他用戶的資料未顯示，請檢查網路連接");
+      console.warn("   如果有其他用戶的資料未顯示，請檢查：");
+      console.warn("   1. 網路連接是否正常");
+      console.warn("   2. Firebase Firestore 規則是否允許讀取");
+      console.warn("   3. Firebase 專案是否正常運作");
     } else {
       console.log("✅ Users synced from server. Count:", users.length);
       console.log("   資料已從 Firebase 伺服器同步");
@@ -148,7 +173,7 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
     
     // Show more specific error messages
     if (error.code === 'permission-denied') {
-      alert("❌ 權限錯誤：請檢查 Firebase Firestore 規則是否允許讀取資料。");
+      alert("❌ 權限錯誤：請檢查 Firebase Firestore 規則是否允許讀取資料。\n\n請前往 Firebase Console → Firestore Database → Rules 設定規則。");
     } else if (error.code === 'unavailable') {
       alert("❌ 無法連接：Firebase 服務暫時不可用，請稍後再試。");
     } else {
