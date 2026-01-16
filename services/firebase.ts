@@ -28,8 +28,12 @@ const db = initializeFirestore(app, {
 });
 
 // Ensure network is enabled for syncing to server
-enableNetwork(db).catch((error) => {
-  console.error("Failed to enable Firestore network:", error);
-});
+enableNetwork(db)
+  .then(() => {
+    console.log("✅ Firestore network enabled. Ready for real-time sync.");
+  })
+  .catch((error) => {
+    console.error("❌ Failed to enable Firestore network:", error);
+  });
 
 export { db };
