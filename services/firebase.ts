@@ -2,7 +2,8 @@ import { initializeApp } from "firebase/app";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager
+  persistentMultipleTabManager,
+  enableNetwork
 } from "firebase/firestore";
 
 // Firebase Configuration
@@ -19,11 +20,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Initialize Cloud Firestore with offline persistence enabled
-// This keeps the offline-first capability (caching) but removes the manual disableNetwork call
+// persistentLocalCache allows offline support but still syncs to server when online
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
+});
+
+// Ensure network is enabled for syncing to server
+enableNetwork(db).catch((error) => {
+  console.error("Failed to enable Firestore network:", error);
 });
 
 export { db };

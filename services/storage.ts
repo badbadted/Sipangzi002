@@ -35,9 +35,18 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
       // We prioritize doc.id from Firestore as the source of truth.
       expenses.push({ ...doc.data(), id: doc.id } as Expense);
     });
+    
+    // Log sync status
+    if (snapshot.metadata.fromCache) {
+      console.log("Expenses loaded from cache. Syncing with server...");
+    } else {
+      console.log("Expenses synced from server. Count:", expenses.length);
+    }
+    
     callback(expenses);
   }, (error) => {
     console.error("Error fetching expenses: ", error);
+    alert("無法連接到 Firebase，請檢查網路連線。");
   });
 };
 
@@ -45,7 +54,9 @@ export const addExpenseToDb = async (expense: Omit<Expense, 'id'>) => {
   try {
     // We let Firestore generate the ID, or we can generate one if we want to setDoc
     // Here we use addDoc which auto-generates ID.
-    await addDoc(collection(db, COLLECTIONS.EXPENSES), expense);
+    const docRef = await addDoc(collection(db, COLLECTIONS.EXPENSES), expense);
+    console.log("Expense added with ID:", docRef.id);
+    return docRef.id;
   } catch (e) {
     console.error("Error adding expense: ", e);
     throw e;
@@ -74,6 +85,13 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
       users.push({ ...doc.data(), id: doc.id } as User);
     });
     
+    // Log sync status
+    if (snapshot.metadata.fromCache) {
+      console.log("Users loaded from cache. Syncing with server...");
+    } else {
+      console.log("Users synced from server. Count:", users.length);
+    }
+    
     // If no users exist in DB (first run), we might want to return INITIAL_USERS
     // However, it's better to actually Initialize the DB with the default user if empty.
     // For the UI, if empty, we can fallback to INITIAL_USERS or show empty.
@@ -81,6 +99,7 @@ export const subscribeUsers = (callback: (users: User[]) => void): Unsubscribe =
     callback(users);
   }, (error) => {
     console.error("Error fetching users: ", error);
+    alert("無法連接到 Firebase，請檢查網路連線。");
   });
 };
 
@@ -90,6 +109,7 @@ export const addUserToDb = async (user: User) => {
     // or use addDoc. The app currently generates UUIDs for users.
     // To keep it simple and consistent with Expense, we use setDoc with the passed ID.
     await setDoc(doc(db, COLLECTIONS.USERS, user.id), user);
+    console.log("User added with ID:", user.id);
   } catch (e) {
     console.error("Error adding user: ", e);
     throw e;
