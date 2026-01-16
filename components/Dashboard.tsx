@@ -30,12 +30,6 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) =>
     [filteredExpenses]
   );
   
-  // 信用卡統計（獨立統計，不列入總支出）
-  const creditCardExpenses = useMemo(() => 
-    filteredExpenses.filter(e => e.paymentMethod === PaymentMethod.CREDIT_CARD), 
-    [filteredExpenses]
-  );
-  
   // 總支出只統計現金（信用卡不列入）
   const totalSpent = useMemo(() => 
     cashExpenses.reduce((acc, curr) => acc + curr.amount, 0), 
@@ -45,11 +39,6 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) =>
   const totalCashSpent = useMemo(() => 
     cashExpenses.reduce((acc, curr) => acc + curr.amount, 0), 
     [cashExpenses]
-  );
-  
-  const totalCreditCardSpent = useMemo(() => 
-    creditCardExpenses.reduce((acc, curr) => acc + curr.amount, 0), 
-    [creditCardExpenses]
   );
   
   // 本月支出只統計現金（信用卡不列入）
@@ -76,18 +65,6 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) =>
       })
       .reduce((acc, curr) => acc + curr.amount, 0);
   }, [cashExpenses]);
-  
-  const currentMonthCreditCardSpent = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    return creditCardExpenses
-      .filter(e => {
-        const d = new Date(e.date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-      })
-      .reduce((acc, curr) => acc + curr.amount, 0);
-  }, [creditCardExpenses]);
 
   // 每日支出統計（主要以現金為主）
   const dailyData = useMemo(() => {
@@ -175,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) =>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 monster-card monster-shadow relative overflow-hidden">
            <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl">🦖</div>
           <h3 className="text-gray-500 text-sm font-bold uppercase tracking-wider">總支出 (現金)</h3>
@@ -193,13 +170,6 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) =>
           <h3 className="text-emerald-100 text-sm font-bold uppercase tracking-wider">現金總計</h3>
           <p className="text-4xl font-bold mt-2">${totalCashSpent.toLocaleString()}</p>
           <p className="text-emerald-100 text-xs mt-1">本月: ${currentMonthCashSpent.toLocaleString()}</p>
-        </div>
-        <div className="bg-indigo-500 p-6 monster-card monster-shadow text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">💳</div>
-          <h3 className="text-indigo-100 text-sm font-bold uppercase tracking-wider">信用卡總計</h3>
-          <p className="text-4xl font-bold mt-2">${totalCreditCardSpent.toLocaleString()}</p>
-          <p className="text-indigo-100 text-xs mt-1">本月: ${currentMonthCreditCardSpent.toLocaleString()}</p>
-          <p className="text-indigo-100 text-xs mt-1">獨立統計</p>
         </div>
       </div>
 
