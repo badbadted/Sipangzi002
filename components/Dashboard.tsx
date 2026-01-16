@@ -3,15 +3,16 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend 
 } from 'recharts';
-import { Expense, User, ExpenseCategory, PaymentMethod } from '../types';
-import { CATEGORY_COLORS, CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../constants';
+import { Expense, User, PaymentMethod, Category } from '../types';
+import { getCategoryColor, getCategoryLabel, PAYMENT_METHOD_LABELS } from '../constants';
 
 interface DashboardProps {
   expenses: Expense[];
   users: User[];
+  categories: Category[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
+const Dashboard: React.FC<DashboardProps> = ({ expenses, users, categories }) => {
   
   // 現金統計（主要統計，信用卡不列入）
   const cashExpenses = useMemo(() => 
@@ -112,11 +113,12 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
       map[e.category] = (map[e.category] || 0) + e.amount;
     });
     return Object.keys(map).map(key => ({
-      name: CATEGORY_LABELS[key as ExpenseCategory] || key,
+      name: getCategoryLabel(key, categories),
       originalKey: key,
-      value: map[key]
+      value: map[key],
+      color: getCategoryColor(key, categories)
     })).filter(item => item.value > 0);
-  }, [cashExpenses]);
+  }, [cashExpenses, categories]);
 
   // 成員統計只統計現金（信用卡不列入）
   const userStats = useMemo(() => {
@@ -204,7 +206,7 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
                   stroke="none"
                 >
                   {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.originalKey as ExpenseCategory] || '#999'} />
+                    <Cell key={`cell-${index}`} fill={entry.color || '#999'} />
                   ))}
                 </Pie>
                 <Tooltip contentStyle={{ borderRadius: '12px', border: '2px solid #059669' }} />

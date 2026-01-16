@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, PieChart, Users, Menu, X } from 'lucide-react';
+import { LayoutDashboard, PieChart, Users, Menu, X, Tag } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Expense, User, ViewMode } from './types';
+import { Expense, User, ViewMode, Category } from './types';
 import { 
   subscribeExpenses, 
   addExpenseToDb, 
@@ -10,32 +10,47 @@ import {
   subscribeUsers, 
   addUserToDb, 
   deleteUserFromDb,
-  seedInitialUser
+  seedInitialUser,
+  subscribeCategories,
+  addCategoryToDb,
+  updateCategoryInDb,
+  deleteCategoryFromDb,
+  seedInitialCategories
 } from './services/storage';
 import { INITIAL_USERS } from './constants';
 
 import Dashboard from './components/Dashboard';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
-import UserManager from './components/UserManager'; 
+import UserManager from './components/UserManager';
+import CategoryManager from './components/CategoryManager'; 
 
 const App: React.FC = () => {
   // -- State --
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
   // -- Initialization & Subscriptions --
   useEffect(() => {
-    // 1. Subscribe to Expenses
+    // 1. Initialize categories
+    seedInitialCategories().catch(console.error);
+
+    // 2. Subscribe to Categories
+    const unsubscribeCategories = subscribeCategories((newCategories) => {
+      setCategories(newCategories);
+    });
+
+    // 3. Subscribe to Expenses
     const unsubscribeExpenses = subscribeExpenses((newExpenses) => {
       setExpenses(newExpenses);
       setIsLoading(false);
     });
 
-    // 2. Subscribe to Users
+    // 4. Subscribe to Users
     const unsubscribeUsers = subscribeUsers((newUsers) => {
       if (newUsers.length === 0) {
         // Seed if empty
@@ -47,6 +62,7 @@ const App: React.FC = () => {
     });
 
     return () => {
+      unsubscribeCategories();
       unsubscribeExpenses();
       unsubscribeUsers();
     };
@@ -94,11 +110,43 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAddCategory = async (categoryData: Omit<Category, 'id'>) => {
+    const newCategory: Category = {
+      id: categoryData.name, // 使用名稱作為 ID
+      ...categoryData,
+    };
+    try {
+      await addCategoryToDb(newCategory);
+    } catch (error) {
+      console.error(error);
+      alert("新增類別失敗。");
+    }
+  };
+
+  const handleUpdateCategory = async (category: Category) => {
+    try {
+      await updateCategoryInDb(category);
+    } catch (error) {
+      console.error(error);
+      alert("更新類別失敗。");
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      await deleteCategoryFromDb(id);
+    } catch (error) {
+      console.error(error);
+      alert("刪除類別失敗。");
+    }
+  };
+
   // -- Navigation Config --
   const navItems = [
     { id: 'dashboard', label: '總覽', icon: LayoutDashboard },
     { id: 'expenses', label: '記帳', icon: PieChart },
     { id: 'users', label: '成員', icon: Users },
+    { id: 'categories', label: '類別', icon: Tag },
   ];
 
   return (
@@ -190,17 +238,19 @@ const App: React.FC = () => {
                 {currentView === 'dashboard' && '歡迎回來！看看今天的戰果 🍖'}
                 {currentView === 'expenses' && '紀錄每一筆開銷，別讓錢錢溜走 💸'}
                 {currentView === 'users' && '召集你的怪獸夥伴們 🦕'}
+                {currentView === 'categories' && '管理支出類別，讓記帳更清晰 🏷️'}
              </p>
           </div>
 
           {/* Views */}
           {currentView === 'dashboard' && (
             <div className="space-y-8">
-              <Dashboard expenses={expenses} users={users} />
+              <Dashboard expenses={expenses} users={users} categories={categories} />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <ExpenseList 
                     expenses={expenses.slice(0, 5)} 
                     users={users} 
+                    categories={categories}
                     onDeleteExpense={handleDeleteExpense} 
                 />
                  {/* Decorative Box */}
@@ -226,11 +276,11 @@ const App: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1">
                 <div className="sticky top-8 space-y-6">
-                    <ExpenseForm users={users} expenses={expenses} onAddExpense={handleAddExpense} />
+                    <ExpenseForm users={users} categories={categories} expenses={expenses} onAddExpense={handleAddExpense} />
                 </div>
               </div>
               <div className="lg:col-span-2">
-                <ExpenseList expenses={expenses} users={users} onDeleteExpense={handleDeleteExpense} />
+                <ExpenseList expenses={expenses} users={users} categories={categories} onDeleteExpense={handleDeleteExpense} />
               </div>
             </div>
           )}
@@ -241,6 +291,18 @@ const App: React.FC = () => {
                     users={users} 
                     onAddUser={handleAddUser} 
                     onDeleteUser={handleDeleteUser} 
+                 />
+             </div>
+          )}
+
+          {currentView === 'categories' && (
+             <div className="max-w-4xl mx-auto">
+                 <CategoryManager 
+                    categories={categories} 
+                    expenses={expenses}
+                    onAddCategory={handleAddCategory} 
+                    onUpdateCategory={handleUpdateCategory}
+                    onDeleteCategory={handleDeleteCategory} 
                  />
              </div>
           )}

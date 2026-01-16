@@ -1,18 +1,19 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, Calendar, Tag, DollarSign, FileText, UserCircle, CreditCard, ChevronDown } from 'lucide-react';
-import { Expense, ExpenseCategory, PaymentMethod, User } from '../types';
-import { CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../constants';
+import { Expense, PaymentMethod, User, Category } from '../types';
+import { PAYMENT_METHOD_LABELS, getCategoryLabel } from '../constants';
 
 interface ExpenseFormProps {
   users: User[];
+  categories: Category[];
   expenses: Expense[]; // 添加 expenses 以獲取歷史描述
   onAddExpense: (expense: Omit<Expense, 'id' | 'timestamp'>) => void;
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense }) => {
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, categories, expenses, onAddExpense }) => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.FOOD);
+  const [category, setCategory] = useState<string>(categories[0]?.id || '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [userId, setUserId] = useState(users[0]?.id || '');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
@@ -86,11 +87,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense
   };
 
   // 當類別改變時，清空描述以顯示新的類別相關描述
-  const handleCategoryChange = (newCategory: ExpenseCategory) => {
+  const handleCategoryChange = (newCategory: string) => {
     setCategory(newCategory);
     setDescription(''); // 清空描述，讓用戶選擇新類別的歷史描述
     setShowDescriptionDropdown(false);
   };
+
+  // 當 categories 改變時，更新預設類別
+  useEffect(() => {
+    if (categories.length > 0 && (!category || !categories.find(c => c.id === category))) {
+      setCategory(categories[0].id);
+    }
+  }, [categories, category]);
 
   return (
     <div className="bg-white p-6 monster-card monster-shadow">
@@ -158,7 +166,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense
                   setShowDescriptionDropdown(true);
                 }
               }}
-              placeholder={`您買了什麼？(${CATEGORY_LABELS[category]}類別的歷史記錄)`}
+              placeholder={`您買了什麼？(${getCategoryLabel(category, categories)}類別的歷史記錄)`}
               required
               list="description-list"
               className="w-full pl-12 pr-12 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all font-bold text-gray-800"
@@ -206,11 +214,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense
               <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
               <select
                 value={category}
-                onChange={(e) => handleCategoryChange(e.target.value as ExpenseCategory)}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
               >
-                {Object.values(ExpenseCategory).map((cat) => (
-                  <option key={cat} value={cat}>{CATEGORY_LABELS[cat] || cat}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
               </select>
             </div>

@@ -14,12 +14,13 @@ import {
   DocumentData
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Expense, User, PaymentMethod } from '../types';
-import { INITIAL_USERS } from '../constants';
+import { Expense, User, PaymentMethod, Category } from '../types';
+import { INITIAL_USERS, DEFAULT_CATEGORIES } from '../constants';
 
 const COLLECTIONS = {
   EXPENSES: 'expenses',
   USERS: 'users',
+  CATEGORIES: 'categories',
 };
 
 // -- Expenses --
@@ -219,4 +220,101 @@ export const deleteUserFromDb = async (id: string) => {
 export const seedInitialUser = async () => {
   const initialUser = INITIAL_USERS[0];
   await addUserToDb(initialUser);
+};
+
+// -- Categories --
+
+export const subscribeCategories = (callback: (categories: Category[]) => void): Unsubscribe => {
+  const q = collection(db, COLLECTIONS.CATEGORIES);
+  
+  // First, try to get data from server
+  getDocs(q).then((serverSnapshot) => {
+    if (!serverSnapshot.empty || serverSnapshot.metadata.fromCache === false) {
+      console.log("✅ 已從伺服器獲取最新類別資料");
+    }
+  }).catch((error) => {
+    console.warn("⚠️ 無法從伺服器獲取類別資料，將使用快取:", error);
+  });
+  
+  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+    const categories: Category[] = [];
+    snapshot.forEach((doc) => {
+      categories.push({ ...doc.data(), id: doc.id } as Category);
+    });
+    
+    // Log sync status
+    if (snapshot.metadata.fromCache) {
+      console.warn("⚠️ Categories loaded from cache. Waiting for server sync...");
+    } else {
+      console.log("✅ Categories synced from server. Count:", categories.length);
+    }
+    
+    // 如果沒有類別，使用預設類別
+    if (categories.length === 0) {
+      callback(DEFAULT_CATEGORIES);
+    } else {
+      callback(categories);
+    }
+  }, (error) => {
+    console.error("❌ Error fetching categories: ", error);
+    // 如果出錯，使用預設類別
+    callback(DEFAULT_CATEGORIES);
+  });
+};
+
+export const addCategoryToDb = async (category: Category) => {
+  try {
+    console.log("📝 正在新增類別到 Firebase...", category);
+    const categoryRef = doc(db, COLLECTIONS.CATEGORIES, category.id);
+    await setDoc(categoryRef, category);
+    console.log("✅ Category added with ID:", category.id);
+  } catch (e: any) {
+    console.error("❌ Error adding category: ", e);
+    if (e.code === 'permission-denied') {
+      throw new Error("權限錯誤：請檢查 Firebase Firestore 規則是否允許寫入資料。");
+    }
+    throw e;
+  }
+};
+
+export const updateCategoryInDb = async (category: Category) => {
+  try {
+    console.log("📝 正在更新類別...", category);
+    const categoryRef = doc(db, COLLECTIONS.CATEGORIES, category.id);
+    await setDoc(categoryRef, category);
+    console.log("✅ Category updated with ID:", category.id);
+  } catch (e: any) {
+    console.error("❌ Error updating category: ", e);
+    throw e;
+  }
+};
+
+export const deleteCategoryFromDb = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, COLLECTIONS.CATEGORIES, id));
+    console.log("✅ Category deleted with ID:", id);
+  } catch (e) {
+    console.error("❌ Error deleting category: ", e);
+    throw e;
+  }
+};
+
+// 檢查類別是否有使用中的支出記錄
+export const checkCategoryInUse = (categoryId: string, expenses: Expense[]): boolean => {
+  return expenses.some(exp => exp.category === categoryId);
+};
+
+// 初始化預設類別
+export const seedInitialCategories = async () => {
+  try {
+    const existingCategories = await getDocs(collection(db, COLLECTIONS.CATEGORIES));
+    if (existingCategories.empty) {
+      console.log("📝 初始化預設類別...");
+      for (const category of DEFAULT_CATEGORIES) {
+        await addCategoryToDb(category);
+      }
+    }
+  } catch (e) {
+    console.error("❌ Error seeding categories: ", e);
+  }
 };

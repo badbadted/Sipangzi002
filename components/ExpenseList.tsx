@@ -1,28 +1,16 @@
 import React from 'react';
-import { Trash2, ShoppingBag, Car, Home, Film, ShoppingCart, HeartPulse, Zap, HelpCircle } from 'lucide-react';
-import { Expense, ExpenseCategory, PaymentMethod, User } from '../types';
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '../constants';
+import { Trash2, Tag, HelpCircle } from 'lucide-react';
+import { Expense, PaymentMethod, User, Category } from '../types';
+import { getCategoryColor, getCategoryLabel } from '../constants';
 
 interface ExpenseListProps {
   expenses: Expense[];
   users: User[];
+  categories: Category[];
   onDeleteExpense: (id: string) => void;
 }
 
-const getCategoryIcon = (category: ExpenseCategory) => {
-  switch (category) {
-    case ExpenseCategory.FOOD: return <ShoppingBag className="w-5 h-5" />;
-    case ExpenseCategory.TRANSPORT: return <Car className="w-5 h-5" />;
-    case ExpenseCategory.HOUSING: return <Home className="w-5 h-5" />;
-    case ExpenseCategory.ENTERTAINMENT: return <Film className="w-5 h-5" />;
-    case ExpenseCategory.SHOPPING: return <ShoppingCart className="w-5 h-5" />;
-    case ExpenseCategory.HEALTH: return <HeartPulse className="w-5 h-5" />;
-    case ExpenseCategory.UTILITIES: return <Zap className="w-5 h-5" />;
-    default: return <HelpCircle className="w-5 h-5" />;
-  }
-};
-
-const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpense }) => {
+const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, categories, onDeleteExpense }) => {
   
   // 過濾掉信用卡支出，只顯示現金支出
   const cashExpenses = expenses.filter(e => e.paymentMethod === PaymentMethod.CASH);
@@ -59,8 +47,8 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpe
       <div className="divide-y-2 divide-gray-100 max-h-[600px] overflow-y-auto p-2">
         {sortedExpenses.map((expense) => {
           const user = users.find(u => u.id === expense.userId);
-          const color = CATEGORY_COLORS[expense.category];
-          const categoryLabel = CATEGORY_LABELS[expense.category] || expense.category;
+          const color = getCategoryColor(expense.category, categories);
+          const categoryLabel = getCategoryLabel(expense.category, categories);
           
           return (
             <div key={expense.id} className="p-4 hover:bg-green-50 transition-colors flex items-center justify-between group rounded-2xl mx-2 my-1">
@@ -70,7 +58,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpe
                   className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-sm border-2 border-white transform group-hover:scale-110 transition-transform"
                   style={{ backgroundColor: color }}
                 >
-                  {getCategoryIcon(expense.category)}
+                  <Tag className="w-5 h-5" />
                 </div>
                 
                 {/* Details */}

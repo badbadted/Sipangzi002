@@ -1,18 +1,30 @@
-import { ExpenseCategory, PaymentMethod } from './types';
+import { ExpenseCategory, PaymentMethod, Category } from './types';
 
-// Updated palette for "Cute" theme
-export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  [ExpenseCategory.FOOD]: '#F87171', // Red 400
-  [ExpenseCategory.TRANSPORT]: '#FBBF24', // Amber 400
-  [ExpenseCategory.HOUSING]: '#60A5FA', // Blue 400
-  [ExpenseCategory.ENTERTAINMENT]: '#A78BFA', // Violet 400
-  [ExpenseCategory.SHOPPING]: '#F472B6', // Pink 400
-  [ExpenseCategory.HEALTH]: '#34D399', // Emerald 400
-  [ExpenseCategory.UTILITIES]: '#818CF8', // Indigo 400
-  [ExpenseCategory.OTHER]: '#9CA3AF', // Gray 400
+// 預設類別（初始數據）
+export const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'Food', name: 'Food', label: '飲食 🍔', color: '#F87171' },
+  { id: 'Transport', name: 'Transport', label: '交通 🚌', color: '#FBBF24' },
+  { id: 'Housing', name: 'Housing', label: '居住 🏠', color: '#60A5FA' },
+  { id: 'Entertainment', name: 'Entertainment', label: '娛樂 🎮', color: '#A78BFA' },
+  { id: 'Shopping', name: 'Shopping', label: '購物 🛍️', color: '#F472B6' },
+  { id: 'Health', name: 'Health', label: '醫療 💊', color: '#34D399' },
+  { id: 'Utilities', name: 'Utilities', label: '帳單 ⚡', color: '#818CF8' },
+  { id: 'Other', name: 'Other', label: '其他 📦', color: '#9CA3AF' },
+];
+
+// 向後兼容：舊的 enum 映射
+export const CATEGORY_COLORS: Record<string, string> = {
+  [ExpenseCategory.FOOD]: '#F87171',
+  [ExpenseCategory.TRANSPORT]: '#FBBF24',
+  [ExpenseCategory.HOUSING]: '#60A5FA',
+  [ExpenseCategory.ENTERTAINMENT]: '#A78BFA',
+  [ExpenseCategory.SHOPPING]: '#F472B6',
+  [ExpenseCategory.HEALTH]: '#34D399',
+  [ExpenseCategory.UTILITIES]: '#818CF8',
+  [ExpenseCategory.OTHER]: '#9CA3AF',
 };
 
-export const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
   [ExpenseCategory.FOOD]: '飲食 🍔',
   [ExpenseCategory.TRANSPORT]: '交通 🚌',
   [ExpenseCategory.HOUSING]: '居住 🏠',
@@ -21,6 +33,18 @@ export const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   [ExpenseCategory.HEALTH]: '醫療 💊',
   [ExpenseCategory.UTILITIES]: '帳單 ⚡',
   [ExpenseCategory.OTHER]: '其他 📦',
+};
+
+// 輔助函數：根據類別 ID 獲取顏色
+export const getCategoryColor = (categoryId: string, categories: Category[]): string => {
+  const category = categories.find(c => c.id === categoryId || c.name === categoryId);
+  return category?.color || CATEGORY_COLORS[categoryId] || '#9CA3AF';
+};
+
+// 輔助函數：根據類別 ID 獲取標籤
+export const getCategoryLabel = (categoryId: string, categories: Category[]): string => {
+  const category = categories.find(c => c.id === categoryId || c.name === categoryId);
+  return category?.label || CATEGORY_LABELS[categoryId] || categoryId;
 };
 
 // Cuter user colors
