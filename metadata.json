@@ -1,0 +1,5 @@
+{
+  "name": "怪獸記帳本",
+  "description": "支援多使用者的可愛風記帳應用程式，使用 Firebase 進行雲端同步。",
+  "requestFramePermissions": []
+}
