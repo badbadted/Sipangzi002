@@ -1,20 +1,67 @@
-import React, { useState } from 'react';
-import { Plus, Calendar, Tag, DollarSign, FileText, UserCircle, CreditCard } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Plus, Calendar, Tag, DollarSign, FileText, UserCircle, CreditCard, ChevronDown } from 'lucide-react';
 import { Expense, ExpenseCategory, PaymentMethod, User } from '../types';
 import { CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../constants';
 
 interface ExpenseFormProps {
   users: User[];
+  expenses: Expense[]; // 添加 expenses 以獲取歷史描述
   onAddExpense: (expense: Omit<Expense, 'id' | 'timestamp'>) => void;
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, onAddExpense }) => {
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, expenses, onAddExpense }) => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.FOOD);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [userId, setUserId] = useState(users[0]?.id || '');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
+  const [showDescriptionDropdown, setShowDescriptionDropdown] = useState(false);
+  const [filteredDescriptions, setFilteredDescriptions] = useState<string[]>([]);
+  const descriptionInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 從歷史支出中提取所有唯一的描述
+  const uniqueDescriptions = useMemo(() => {
+    const descriptions = new Set<string>();
+    expenses.forEach(exp => {
+      if (exp.description && exp.description.trim()) {
+        descriptions.add(exp.description.trim());
+      }
+    });
+    return Array.from(descriptions).sort();
+  }, [expenses]);
+
+  // 根據輸入過濾描述
+  useEffect(() => {
+    if (description.trim() === '') {
+      const top10 = uniqueDescriptions.slice(0, 10);
+      setFilteredDescriptions(top10);
+      setShowDescriptionDropdown(false);
+    } else {
+      const filtered = uniqueDescriptions
+        .filter(desc => desc.toLowerCase().includes(description.toLowerCase()))
+        .slice(0, 10);
+      setFilteredDescriptions(filtered);
+      setShowDescriptionDropdown(filtered.length > 0);
+    }
+  }, [description, uniqueDescriptions]);
+
+  // 點擊外部關閉下拉
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        descriptionInputRef.current &&
+        !descriptionInputRef.current.contains(event.target as Node)
+      ) {
+        setShowDescriptionDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,20 +126,65 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, onAddExpense }) => {
           </div>
         </div>
 
-        {/* Description */}
-        <div className="space-y-2">
+        {/* Description with autocomplete */}
+        <div className="space-y-2 relative">
           <label className="text-sm font-bold text-gray-700 ml-1">描述 📝</label>
           <div className="relative group">
-            <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+            <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors z-10" />
             <input
+              ref={descriptionInputRef}
               type="text"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="您買了什麼？"
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setShowDescriptionDropdown(true);
+              }}
+              onFocus={() => {
+                if (uniqueDescriptions.length > 0) {
+                  if (description.trim() === '') {
+                    setFilteredDescriptions(uniqueDescriptions.slice(0, 10));
+                  }
+                  setShowDescriptionDropdown(true);
+                }
+              }}
+              placeholder="您買了什麼？(可輸入或選擇歷史記錄)"
               required
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all font-bold text-gray-800"
+              list="description-list"
+              className="w-full pl-12 pr-12 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all font-bold text-gray-800"
             />
+            {uniqueDescriptions.length > 0 && (
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+            )}
+            
+            {/* 自定義下拉選單 */}
+            {showDescriptionDropdown && filteredDescriptions.length > 0 && (
+              <div 
+                ref={dropdownRef}
+                className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto"
+              >
+                {filteredDescriptions.map((desc, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                      setDescription(desc);
+                      setShowDescriptionDropdown(false);
+                      descriptionInputRef.current?.focus();
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-emerald-50 transition-colors border-b border-gray-100 last:border-b-0 font-bold text-gray-700"
+                  >
+                    {desc}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+          {/* HTML5 datalist 作為備用 */}
+          <datalist id="description-list">
+            {uniqueDescriptions.map((desc, index) => (
+              <option key={index} value={desc} />
+            ))}
+          </datalist>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

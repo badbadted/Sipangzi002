@@ -13,13 +13,22 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
   
-  // -- Statistics Calculation --
-  const totalSpent = useMemo(() => expenses.reduce((acc, curr) => acc + curr.amount, 0), [expenses]);
-  
-  // 現金統計（主要統計）
+  // 現金統計（主要統計，信用卡不列入）
   const cashExpenses = useMemo(() => 
     expenses.filter(e => e.paymentMethod === PaymentMethod.CASH), 
     [expenses]
+  );
+  
+  // 信用卡統計（獨立統計，不列入總支出）
+  const creditCardExpenses = useMemo(() => 
+    expenses.filter(e => e.paymentMethod === PaymentMethod.CREDIT_CARD), 
+    [expenses]
+  );
+  
+  // 總支出只統計現金（信用卡不列入）
+  const totalSpent = useMemo(() => 
+    cashExpenses.reduce((acc, curr) => acc + curr.amount, 0), 
+    [cashExpenses]
   );
   
   const totalCashSpent = useMemo(() => 
@@ -27,28 +36,23 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
     [cashExpenses]
   );
   
-  // 信用卡統計
-  const creditCardExpenses = useMemo(() => 
-    expenses.filter(e => e.paymentMethod === PaymentMethod.CREDIT_CARD), 
-    [expenses]
-  );
-  
   const totalCreditCardSpent = useMemo(() => 
     creditCardExpenses.reduce((acc, curr) => acc + curr.amount, 0), 
     [creditCardExpenses]
   );
   
+  // 本月支出只統計現金（信用卡不列入）
   const currentMonthSpent = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    return expenses
+    return cashExpenses
       .filter(e => {
         const d = new Date(e.date);
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
       })
       .reduce((acc, curr) => acc + curr.amount, 0);
-  }, [expenses]);
+  }, [cashExpenses]);
   
   const currentMonthCashSpent = useMemo(() => {
     const now = new Date();
@@ -101,9 +105,10 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
     return data;
   }, [cashExpenses]);
 
+  // 分類統計只統計現金（信用卡不列入）
   const categoryData = useMemo(() => {
     const map: Record<string, number> = {};
-    expenses.forEach(e => {
+    cashExpenses.forEach(e => {
       map[e.category] = (map[e.category] || 0) + e.amount;
     });
     return Object.keys(map).map(key => ({
@@ -111,11 +116,12 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
       originalKey: key,
       value: map[key]
     })).filter(item => item.value > 0);
-  }, [expenses]);
+  }, [cashExpenses]);
 
+  // 成員統計只統計現金（信用卡不列入）
   const userStats = useMemo(() => {
       const map: Record<string, number> = {};
-      expenses.forEach(e => {
+      cashExpenses.forEach(e => {
           map[e.userId] = (map[e.userId] || 0) + e.amount;
       });
       return Object.keys(map).map(uid => ({
@@ -123,7 +129,7 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
           value: map[uid],
           color: users.find(u => u.id === uid)?.color || '#ccc'
       }));
-  }, [expenses, users]);
+  }, [cashExpenses, users]);
 
 
   return (
@@ -132,13 +138,15 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 monster-card monster-shadow relative overflow-hidden">
            <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl">🦖</div>
-          <h3 className="text-gray-500 text-sm font-bold uppercase tracking-wider">總支出 (所有時間)</h3>
+          <h3 className="text-gray-500 text-sm font-bold uppercase tracking-wider">總支出 (現金)</h3>
           <p className="text-4xl font-bold text-gray-800 mt-2">${totalSpent.toLocaleString()}</p>
+          <p className="text-gray-400 text-xs mt-1">信用卡不列入</p>
         </div>
         <div className="bg-primary p-6 monster-card monster-shadow text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">🔥</div>
-          <h3 className="text-emerald-100 text-sm font-bold uppercase tracking-wider">本月支出</h3>
+          <h3 className="text-emerald-100 text-sm font-bold uppercase tracking-wider">本月支出 (現金)</h3>
           <p className="text-4xl font-bold mt-2">${currentMonthSpent.toLocaleString()}</p>
+          <p className="text-emerald-100 text-xs mt-1">信用卡不列入</p>
         </div>
         <div className="bg-emerald-500 p-6 monster-card monster-shadow text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">💵</div>
@@ -151,6 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ expenses, users }) => {
           <h3 className="text-indigo-100 text-sm font-bold uppercase tracking-wider">信用卡總計</h3>
           <p className="text-4xl font-bold mt-2">${totalCreditCardSpent.toLocaleString()}</p>
           <p className="text-indigo-100 text-xs mt-1">本月: ${currentMonthCreditCardSpent.toLocaleString()}</p>
+          <p className="text-indigo-100 text-xs mt-1">獨立統計</p>
         </div>
       </div>
 

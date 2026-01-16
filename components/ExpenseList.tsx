@@ -1,7 +1,7 @@
 import React from 'react';
-import { Trash2, ShoppingBag, Car, Home, Film, ShoppingCart, HeartPulse, Zap, HelpCircle, CreditCard } from 'lucide-react';
+import { Trash2, ShoppingBag, Car, Home, Film, ShoppingCart, HeartPulse, Zap, HelpCircle } from 'lucide-react';
 import { Expense, ExpenseCategory, PaymentMethod, User } from '../types';
-import { CATEGORY_COLORS, CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../constants';
+import { CATEGORY_COLORS, CATEGORY_LABELS } from '../constants';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -24,7 +24,10 @@ const getCategoryIcon = (category: ExpenseCategory) => {
 
 const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpense }) => {
   
-  const sortedExpenses = [...expenses].sort((a, b) => {
+  // 過濾掉信用卡支出，只顯示現金支出
+  const cashExpenses = expenses.filter(e => e.paymentMethod === PaymentMethod.CASH);
+  
+  const sortedExpenses = [...cashExpenses].sort((a, b) => {
     const dateComp = new Date(b.date).getTime() - new Date(a.date).getTime();
     if (dateComp !== 0) return dateComp;
     return b.timestamp - a.timestamp;
@@ -49,7 +52,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpe
             📜 近期交易
         </h2>
         <span className="text-xs font-bold text-primary bg-green-100 px-3 py-1.5 rounded-full border border-green-200">
-            共 {expenses.length} 筆
+            共 {cashExpenses.length} 筆 (現金)
         </span>
       </div>
       
@@ -86,17 +89,6 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, users, onDeleteExpe
                     <span className="flex items-center gap-1 bg-gray-200 px-2 py-0.5 rounded-full">
                       <div className="w-2 h-2 rounded-full" style={{backgroundColor: user?.color}}></div>
                       {user?.name || '未知'}
-                    </span>
-                    <span>•</span>
-                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
-                      expense.paymentMethod === PaymentMethod.CASH 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-indigo-100 text-indigo-700'
-                    }`}>
-                      {expense.paymentMethod === PaymentMethod.CREDIT_CARD && (
-                        <CreditCard className="w-3 h-3" />
-                      )}
-                      {PAYMENT_METHOD_LABELS[expense.paymentMethod]}
                     </span>
                   </div>
                 </div>
