@@ -46,11 +46,25 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
       // but Firestore also has the ID as doc.id.
       // We prioritize doc.id from Firestore as the source of truth.
       const data = doc.data();
+      
       // 處理舊資料兼容性：如果沒有 paymentMethod，預設為現金
-      if (!data.paymentMethod) {
-        data.paymentMethod = PaymentMethod.CASH;
+      let paymentMethod = PaymentMethod.CASH;
+      if (data.paymentMethod) {
+        // 確保 paymentMethod 是有效的 enum 值
+        if (data.paymentMethod === PaymentMethod.CREDIT_CARD || 
+            data.paymentMethod === 'CreditCard' || 
+            data.paymentMethod === 'CREDIT_CARD') {
+          paymentMethod = PaymentMethod.CREDIT_CARD;
+        } else {
+          paymentMethod = PaymentMethod.CASH;
+        }
       }
-      expenses.push({ ...data, id: doc.id } as Expense);
+      
+      expenses.push({ 
+        ...data, 
+        id: doc.id,
+        paymentMethod 
+      } as Expense);
     });
     
     // Log sync status for debugging
@@ -63,6 +77,10 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
     } else {
       console.log("✅ Expenses synced from server. Count:", expenses.length);
       console.log("   資料已從 Firebase 伺服器同步");
+      // 統計支付方式
+      const cashCount = expenses.filter(e => e.paymentMethod === PaymentMethod.CASH).length;
+      const creditCount = expenses.filter(e => e.paymentMethod === PaymentMethod.CREDIT_CARD).length;
+      console.log(`   現金: ${cashCount} 筆, 信用卡: ${creditCount} 筆`);
     }
     
     // Log pending writes
@@ -71,7 +89,14 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
     }
     
     // Always call callback, but log if it's from cache
-    callback(expenses);
+    // 確保按照 timestamp 排序（最新的在前）
+    const sortedExpenses = expenses.sort((a, b) => {
+      if (b.timestamp !== a.timestamp) {
+        return b.timestamp - a.timestamp;
+      }
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+    callback(sortedExpenses);
   }, (error) => {
     console.error("❌ Error fetching expenses: ", error);
     console.error("錯誤詳情:", error.code, error.message);

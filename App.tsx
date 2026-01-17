@@ -47,7 +47,15 @@ const App: React.FC = () => {
 
     // 3. Subscribe to Expenses
     const unsubscribeExpenses = subscribeExpenses((newExpenses) => {
-      setExpenses(newExpenses);
+      console.log('App: 收到新的支出數據，共', newExpenses.length, '筆');
+      // 確保數據按時間戳排序（最新的在前）
+      const sortedExpenses = [...newExpenses].sort((a, b) => {
+        if (b.timestamp !== a.timestamp) {
+          return b.timestamp - a.timestamp;
+        }
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+      setExpenses(sortedExpenses);
       setIsLoading(false);
     });
 
