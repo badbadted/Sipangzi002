@@ -69,7 +69,24 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, categories, expenses, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !description || !userId) return;
+    if (!amount || !description || !userId || !category) {
+      alert('請填寫所有必填欄位！');
+      return;
+    }
+
+    // 確保 paymentMethod 是有效的 PaymentMethod 值
+    const validPaymentMethod = Object.values(PaymentMethod).includes(paymentMethod as PaymentMethod)
+      ? paymentMethod
+      : PaymentMethod.CASH;
+
+    console.log('提交支出數據:', {
+      amount: parseFloat(amount),
+      description,
+      category,
+      date,
+      userId,
+      paymentMethod: validPaymentMethod
+    });
 
     onAddExpense({
       amount: parseFloat(amount),
@@ -77,7 +94,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, categories, expenses, 
       category,
       date,
       userId,
-      paymentMethod
+      paymentMethod: validPaymentMethod
     });
 
     // Reset form partially
@@ -231,7 +248,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, categories, expenses, 
               <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
               <select
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                onChange={(e) => {
+                  const selectedValue = e.target.value as PaymentMethod;
+                  console.log('選擇支付方式:', selectedValue);
+                  setPaymentMethod(selectedValue);
+                }}
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
               >
                 {Object.values(PaymentMethod).map((method) => (

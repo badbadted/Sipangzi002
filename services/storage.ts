@@ -90,18 +90,27 @@ export const subscribeExpenses = (callback: (expenses: Expense[]) => void): Unsu
 export const addExpenseToDb = async (expense: Omit<Expense, 'id'>) => {
   try {
     console.log("📝 正在新增支出到 Firebase...", expense);
+    console.log("支付方式:", expense.paymentMethod);
+    
+    // 確保 paymentMethod 存在，如果沒有則設為預設值
+    const expenseData = {
+      ...expense,
+      paymentMethod: expense.paymentMethod || PaymentMethod.CASH
+    };
     
     // We let Firestore generate the ID, or we can generate one if we want to setDoc
     // Here we use addDoc which auto-generates ID.
-    const docRef = await addDoc(collection(db, COLLECTIONS.EXPENSES), expense);
+    const docRef = await addDoc(collection(db, COLLECTIONS.EXPENSES), expenseData);
     console.log("✅ Expense added with ID:", docRef.id);
     console.log("✅ 支出已成功寫入 Firebase，其他用戶將看到此更新");
+    console.log("✅ 支付方式:", expenseData.paymentMethod);
     
     return docRef.id;
   } catch (e: any) {
     console.error("❌ Error adding expense: ", e);
     console.error("錯誤代碼:", e.code);
     console.error("錯誤訊息:", e.message);
+    console.error("支出數據:", expense);
     
     if (e.code === 'permission-denied') {
       throw new Error("權限錯誤：請檢查 Firebase Firestore 規則是否允許寫入資料。");

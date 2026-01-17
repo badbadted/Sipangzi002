@@ -73,13 +73,16 @@ const App: React.FC = () => {
   
   const handleAddExpense = async (expenseData: Omit<Expense, 'id' | 'timestamp'>) => {
     try {
+      console.log('App: 準備新增支出:', expenseData);
       await addExpenseToDb({
         ...expenseData,
         timestamp: Date.now()
       });
-    } catch (error) {
-      console.error(error);
-      alert("儲存失敗，請檢查網路連線。");
+      console.log('App: 支出新增成功');
+    } catch (error: any) {
+      console.error('App: 新增支出失敗:', error);
+      const errorMessage = error?.message || '儲存失敗，請檢查網路連線。';
+      alert(`❌ ${errorMessage}\n\n如果問題持續，請檢查：\n1. 網路連線是否正常\n2. Firebase 規則是否允許寫入\n3. 瀏覽器控制台是否有更多錯誤信息`);
     }
   };
 
