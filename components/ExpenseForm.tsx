@@ -162,6 +162,46 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, categories, expenses, 
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Category */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1">類別 🏷️</label>
+            <div className="relative group">
+              <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+              <select
+                value={category}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Payment Method */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1">支付方式 💳</label>
+            <div className="relative group">
+              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+              <select
+                value={paymentMethod}
+                onChange={(e) => {
+                  const selectedValue = e.target.value as PaymentMethod;
+                  console.log('選擇支付方式:', selectedValue);
+                  setPaymentMethod(selectedValue);
+                }}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
+              >
+                {Object.values(PaymentMethod).map((method) => (
+                  <option key={method} value={method}>{PAYMENT_METHOD_LABELS[method]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Description with autocomplete */}
         <div className="space-y-2 relative">
           <label className="text-sm font-bold text-gray-700 ml-1">描述 📝</label>
@@ -221,46 +261,6 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ users, categories, expenses, 
               <option key={index} value={desc} />
             ))}
           </datalist>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Category */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">類別 🏷️</label>
-            <div className="relative group">
-              <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
-              <select
-                value={category}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Payment Method */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">支付方式 💳</label>
-            <div className="relative group">
-              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
-              <select
-                value={paymentMethod}
-                onChange={(e) => {
-                  const selectedValue = e.target.value as PaymentMethod;
-                  console.log('選擇支付方式:', selectedValue);
-                  setPaymentMethod(selectedValue);
-                }}
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-0 outline-none transition-all appearance-none text-gray-800 font-bold"
-              >
-                {Object.values(PaymentMethod).map((method) => (
-                  <option key={method} value={method}>{PAYMENT_METHOD_LABELS[method]}</option>
-                ))}
-              </select>
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
