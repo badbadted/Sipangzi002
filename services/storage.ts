@@ -14,13 +14,14 @@ import {
   DocumentData
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Expense, User, PaymentMethod, Category } from '../types';
+import { Expense, User, PaymentMethod, Category, FixedExpense } from '../types';
 import { INITIAL_USERS, DEFAULT_CATEGORIES } from '../constants';
 
 const COLLECTIONS = {
   EXPENSES: 'expenses',
   USERS: 'users',
   CATEGORIES: 'categories',
+  FIXED_EXPENSES: 'fixedExpenses',
 };
 
 // -- Expenses --
@@ -350,5 +351,79 @@ export const seedInitialCategories = async () => {
     }
   } catch (e) {
     console.error("❌ Error seeding categories: ", e);
+  }
+};
+
+// -- Fixed Expenses --
+
+export const subscribeFixedExpenses = (callback: (fixedExpenses: FixedExpense[]) => void): Unsubscribe => {
+  const q = query(collection(db, COLLECTIONS.FIXED_EXPENSES), orderBy("timestamp", "desc"));
+  
+  // First, try to get data from server
+  getDocs(q).then((serverSnapshot) => {
+    if (!serverSnapshot.empty || serverSnapshot.metadata.fromCache === false) {
+      console.log("✅ 已從伺服器獲取最新固定支出資料");
+    }
+  }).catch((error) => {
+    console.warn("⚠️ 無法從伺服器獲取固定支出資料，將使用快取:", error);
+  });
+  
+  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+    const fixedExpenses: FixedExpense[] = [];
+    snapshot.forEach((doc) => {
+      fixedExpenses.push({ ...doc.data(), id: doc.id } as FixedExpense);
+    });
+    
+    // Log sync status
+    if (snapshot.metadata.fromCache) {
+      console.warn("⚠️ Fixed expenses loaded from cache. Waiting for server sync...");
+    } else {
+      console.log("✅ Fixed expenses synced from server. Count:", fixedExpenses.length);
+    }
+    
+    callback(fixedExpenses);
+  }, (error) => {
+    console.error("❌ Error fetching fixed expenses: ", error);
+    if (error.code === 'permission-denied') {
+      alert("❌ 權限錯誤：請檢查 Firebase Firestore 規則是否允許讀取固定支出資料。");
+    }
+    callback([]);
+  });
+};
+
+export const addFixedExpenseToDb = async (fixedExpense: Omit<FixedExpense, 'id'>) => {
+  try {
+    console.log("📝 正在新增固定支出到 Firebase...", fixedExpense);
+    const docRef = await addDoc(collection(db, COLLECTIONS.FIXED_EXPENSES), fixedExpense);
+    console.log("✅ Fixed expense added with ID:", docRef.id);
+    return docRef.id;
+  } catch (e: any) {
+    console.error("❌ Error adding fixed expense: ", e);
+    if (e.code === 'permission-denied') {
+      throw new Error("權限錯誤：請檢查 Firebase Firestore 規則是否允許寫入資料。");
+    }
+    throw e;
+  }
+};
+
+export const updateFixedExpenseInDb = async (fixedExpense: FixedExpense) => {
+  try {
+    console.log("📝 正在更新固定支出...", fixedExpense);
+    const fixedExpenseRef = doc(db, COLLECTIONS.FIXED_EXPENSES, fixedExpense.id);
+    await setDoc(fixedExpenseRef, fixedExpense);
+    console.log("✅ Fixed expense updated with ID:", fixedExpense.id);
+  } catch (e: any) {
+    console.error("❌ Error updating fixed expense: ", e);
+    throw e;
+  }
+};
+
+export const deleteFixedExpenseFromDb = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, COLLECTIONS.FIXED_EXPENSES, id));
+    console.log("✅ Fixed expense deleted with ID:", id);
+  } catch (e) {
+    console.error("❌ Error deleting fixed expense: ", e);
+    throw e;
   }
 };

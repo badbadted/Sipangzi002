@@ -41,7 +41,14 @@ export interface Expense {
   timestamp: number; // For sorting
 }
 
-export type ViewMode = 'dashboard' | 'expenses' | 'users' | 'categories' | 'creditcard';
+export type ViewMode = 'dashboard' | 'expenses' | 'users' | 'categories' | 'creditcard' | 'fixedexpenses';
+
+export interface FixedExpense {
+  id: string;
+  name: string; // 項目名稱
+  amount: number; // 金額
+  timestamp: number; // 創建時間戳
+}
 
 export interface DailyStat {
   date: string;

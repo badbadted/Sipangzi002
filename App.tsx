@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, PieChart, Users, Menu, X, Tag, CreditCard } from 'lucide-react';
+import { LayoutDashboard, PieChart, Users, Menu, X, Tag, CreditCard, Repeat } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Expense, User, ViewMode, Category } from './types';
+import { Expense, User, ViewMode, Category, FixedExpense } from './types';
 import { 
   subscribeExpenses, 
   addExpenseToDb, 
@@ -15,7 +15,11 @@ import {
   addCategoryToDb,
   updateCategoryInDb,
   deleteCategoryFromDb,
-  seedInitialCategories
+  seedInitialCategories,
+  subscribeFixedExpenses,
+  addFixedExpenseToDb,
+  updateFixedExpenseInDb,
+  deleteFixedExpenseFromDb
 } from './services/storage';
 import { INITIAL_USERS } from './constants';
 
@@ -24,13 +28,15 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import UserManager from './components/UserManager';
 import CategoryManager from './components/CategoryManager';
-import CreditCardView from './components/CreditCardView'; 
+import CreditCardView from './components/CreditCardView';
+import FixedExpenseManager from './components/FixedExpenseManager'; 
 
 const App: React.FC = () => {
   // -- State --
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,10 +76,16 @@ const App: React.FC = () => {
       }
     });
 
+    // 5. Subscribe to Fixed Expenses
+    const unsubscribeFixedExpenses = subscribeFixedExpenses((newFixedExpenses) => {
+      setFixedExpenses(newFixedExpenses);
+    });
+
     return () => {
       unsubscribeCategories();
       unsubscribeExpenses();
       unsubscribeUsers();
+      unsubscribeFixedExpenses();
     };
   }, []); 
 
@@ -153,11 +165,42 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAddFixedExpense = async (fixedExpenseData: Omit<FixedExpense, 'id' | 'timestamp'>) => {
+    try {
+      await addFixedExpenseToDb({
+        ...fixedExpenseData,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error(error);
+      alert("新增固定支出失敗。");
+    }
+  };
+
+  const handleUpdateFixedExpense = async (fixedExpense: FixedExpense) => {
+    try {
+      await updateFixedExpenseInDb(fixedExpense);
+    } catch (error) {
+      console.error(error);
+      alert("更新固定支出失敗。");
+    }
+  };
+
+  const handleDeleteFixedExpense = async (id: string) => {
+    try {
+      await deleteFixedExpenseFromDb(id);
+    } catch (error) {
+      console.error(error);
+      alert("刪除固定支出失敗。");
+    }
+  };
+
   // -- Navigation Config --
   const navItems = [
     { id: 'dashboard', label: '總覽', icon: LayoutDashboard },
     { id: 'expenses', label: '記帳', icon: PieChart },
     { id: 'creditcard', label: '信用卡', icon: CreditCard },
+    { id: 'fixedexpenses', label: '固定支出', icon: Repeat },
     { id: 'users', label: '成員', icon: Users },
     { id: 'categories', label: '類別', icon: Tag },
   ];
@@ -251,6 +294,7 @@ const App: React.FC = () => {
                 {currentView === 'dashboard' && '歡迎回來！看看今天的戰果 🍖'}
                 {currentView === 'expenses' && '紀錄每一筆開銷，別讓錢錢溜走 💸'}
                 {currentView === 'creditcard' && '查看信用卡消費明細 💳'}
+                {currentView === 'fixedexpenses' && '管理每月固定支出，掌握財務概況 💰'}
                 {currentView === 'users' && '召集你的怪獸夥伴們 🦕'}
                 {currentView === 'categories' && '管理支出類別，讓記帳更清晰 🏷️'}
              </p>
@@ -328,6 +372,17 @@ const App: React.FC = () => {
                     users={users} 
                     categories={categories}
                     onDeleteExpense={handleDeleteExpense} 
+                 />
+             </div>
+          )}
+
+          {currentView === 'fixedexpenses' && (
+             <div className="max-w-4xl mx-auto">
+                 <FixedExpenseManager 
+                    fixedExpenses={fixedExpenses} 
+                    onAddFixedExpense={handleAddFixedExpense} 
+                    onUpdateFixedExpense={handleUpdateFixedExpense}
+                    onDeleteFixedExpense={handleDeleteFixedExpense} 
                  />
              </div>
           )}
