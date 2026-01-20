@@ -257,8 +257,9 @@ const FixedExpenseManager: React.FC<FixedExpenseManagerProps> = ({
               </div>
             </div>
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
